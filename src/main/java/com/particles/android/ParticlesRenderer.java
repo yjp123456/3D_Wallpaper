@@ -197,7 +197,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
 
         glDepthMask(false);//设置深度缓冲区只读，这样粒子间不会因为深度缓冲区互相遮挡，主要针对3D透明问题
         glEnable(GLES20.GL_BLEND);//混合粒子，粒子越多越亮
-        /*GL_SRC_ALPHA 表示原颜色（图片）使用源颜色的alpha值来作为因子,GL_ONE_MINUS_SRC_ALPH 表示目标颜色（背景）使用1.0减去源颜色的alpha值来作为因子
+        /*GL_SRC_ALPHA 表示源颜色（图片）使用源颜色的alpha值来作为因子,GL_ONE_MINUS_SRC_ALPH 表示目标颜色（背景）使用1.0减去源颜色的alpha值来作为因子
         这样一来，源颜色的alpha值越大， 则产生的新颜色中源颜色所占比例就越大，可以实现部分透明*/
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         drawGoButton();//必须先设置深度缓冲区为只读，不然透明部分后面的物体是不会绘制的，默认的颜色就是glClearColor(1f, 1.0f, 1.0f, 0.0f);
