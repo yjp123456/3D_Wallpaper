@@ -102,7 +102,8 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
     private int car_pic_right;
     private int car_pic;
 
-    private TaskRunner clickEvent = new TaskRunner(1);
+    private TaskRunner leftToRightEvent = new TaskRunner(1);
+    private TaskRunner topToBottomEvent = new TaskRunner(1);
 
 
     private SkyboxShaderProgram skyboxShaderProgram;
@@ -447,8 +448,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
             car_pic = car_pic_back;
             if (isActionDown) {
                 is_go_btn_pressed = true;
-                clickEvent = new TaskRunner(1);
-                clickEvent.execute(new Runnable() {
+                topToBottomEvent.execute(new Runnable() {
                     @Override
                     public void run() {
                         while (is_go_btn_pressed) {
@@ -471,14 +471,12 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                 });
             } else {
                 is_go_btn_pressed = false;
-                clickEvent.stop();
             }
         } else if (isBackBtnClick(x, y)) {
             car_pic = car_pic_front;
-            clickEvent = new TaskRunner(1);
             if (isActionDown) {
                 is_back_btn_pressed = true;
-                clickEvent.execute(new Runnable() {
+                topToBottomEvent.execute(new Runnable() {
                     @Override
                     public void run() {
                         while (is_back_btn_pressed) {
@@ -502,14 +500,12 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                 });
             } else {
                 is_back_btn_pressed = false;
-                clickEvent.stop();
             }
         } else if (isLeftBtnClick(x, y)) {
             car_pic = car_pic_left;
             if (isActionDown) {
                 is_left_btn_pressed = true;
-                clickEvent = new TaskRunner(1);
-                clickEvent.execute(new Runnable() {
+                leftToRightEvent.execute(new Runnable() {
                     @Override
                     public void run() {
                         while (is_left_btn_pressed) {
@@ -533,14 +529,12 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
 
             } else {
                 is_left_btn_pressed = false;
-                clickEvent.stop();
             }
         } else if (isRightBtnClick(x, y)) {
             car_pic = car_pic_right;
             if (isActionDown) {
                 is_right_btn_pressed = true;
-                clickEvent = new TaskRunner(1);
-                clickEvent.execute(new Runnable() {
+                leftToRightEvent.execute(new Runnable() {
                     @Override
                     public void run() {
                         while (is_right_btn_pressed) {
@@ -563,7 +557,6 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                 });
             } else {
                 is_right_btn_pressed = false;
-                clickEvent.stop();
             }
         }
     }
