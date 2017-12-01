@@ -25,12 +25,14 @@ public class Heightmap {
     private static final int TOTAL_COMPONENT_COUNT = POSITION_COMPONENT_COUNT + NORMAL_COMPONENT_COUNT;
     private static final int STRIDE = (POSITION_COMPONENT_COUNT + NORMAL_COMPONENT_COUNT) * BYTE_PER_FLOAT;
 
-    private final int width;
-    private final int height;
+    public final int width;
+    public final int height;
     private final int numElements;
     private final VertexBuffer vertexBuffer;
 
     private final IndexBuffer indexBuffer;
+
+    public int[] pixels;
 
 
     public Heightmap(Bitmap bitmap) {
@@ -47,7 +49,7 @@ public class Heightmap {
     }
 
     private float[] loadBitmapData(Bitmap bitmap) {
-        final int[] pixels = new int[width * height];
+        pixels = new int[width * height];
         bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
         bitmap.recycle();
 
@@ -79,13 +81,13 @@ public class Heightmap {
         return heightmapVerticles;
     }
 
-    private Geometry.Point getPoint(int[] pixels, int row, int col) {
+    public Geometry.Point getPoint(int[] pixels, int row, int col) {
         final float x = ((float) col / (float) (width - 1)) - 0.5f;
         final float z = ((float) row / (float) (height - 1)) - 0.5f;
 
-        row = clamp(row, 0, width - 1);
-        col = clamp(col, 0, height - 1);
-        float y = (float) Color.red(pixels[(row * height) + col]) / (float) 255;
+        row = clamp(row, 0, height - 1);
+        col = clamp(col, 0, width - 1);
+        float y = (float) Color.red(pixels[(row * width) + col]) / (float) 255;
         return new Geometry.Point(x, y, z);
     }
 

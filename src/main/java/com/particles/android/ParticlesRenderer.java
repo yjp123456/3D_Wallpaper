@@ -8,6 +8,7 @@ import android.opengl.GLSurfaceView;
 import android.util.Log;
 
 import com.particles.android.objects.Buttons;
+import com.particles.android.objects.Car;
 import com.particles.android.objects.Heightmap;
 import com.particles.android.objects.ParticleShooter;
 import com.particles.android.objects.ParticleSystem;
@@ -70,27 +71,35 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
 
     private Buttons goButton;
     private Buttons backButton;
+    private Buttons leftButton;
+    private Buttons rightButton;
+    private Car car;
     private TextureShaderProgram textureProgram;
     private ParticleShaderProgram particleShaderProgram;
     private HeightmapShaderProgram heightmapProgram;
     private Heightmap heightmap;
     private ParticleSystem particleSystem;
     private ParticleShooter redParticleShooter;
-    private ParticleShooter greenParticleShooter;
+    //private ParticleShooter greenParticleShooter;
     private ParticleShooter blueParticleShooter;
 
     private long globalStartTime;
     private int particle;
 
-    //go button
-    private int go_btn_pic;
-    private int go_btn_pic_pressed;
+    //arrow button
+    private int btn_pic;
+    private int btn_pic_pressed;
     private boolean is_go_btn_pressed = false;
-
-    //back button
-    private int back_btn_pic;
-    private int back_btn_pic_pressed;
     private boolean is_back_btn_pressed = false;
+    private boolean is_left_btn_pressed = false;
+    private boolean is_right_btn_pressed = false;
+
+
+    private int car_pic_front;
+    private int car_pic_back;
+    private int car_pic_left;
+    private int car_pic_right;
+    private int car_pic;
 
 
     private SkyboxShaderProgram skyboxShaderProgram;
@@ -98,7 +107,8 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
     private int skyboxTexture;
     private float xRotation, yRotation;
 
-    private float distance = 0f;
+    private float zDistance = 0f;
+    private float xDistance = 0f;
     private float btn_left = -0.1f;
     private float btn_right = 0.1f;
     private float btn_bottom = -0.1f;
@@ -109,6 +119,8 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
     private float near = 1f;
 
     private float xOffset, yOffset;
+    private int row = 0;
+    private int col = 0;
 
 
     //光线向量，由(0,0,-1)开始旋转，直到太阳处于屏幕正中间计算出来下面的向量
@@ -143,12 +155,18 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
             Log.d("particle", "Invalid operation");
         }
 
-        textureProgram = new TextureShaderProgram(context);
-        goButton = new Buttons();
-        backButton = new Buttons();
+
         heightmapProgram = new HeightmapShaderProgram(context);
         heightmap = new Heightmap(((BitmapDrawable) context.getResources().getDrawable(R.drawable.heightmap))
                 .getBitmap());
+        textureProgram = new TextureShaderProgram(context);
+        goButton = new Buttons();
+        backButton = new Buttons();
+        leftButton = new Buttons();
+        rightButton = new Buttons();
+        row = heightmap.height / 2;
+        col = heightmap.width / 2;
+        car = new Car(heightmap.getPoint(heightmap.pixels, row, col));
         particleShaderProgram = new ParticleShaderProgram(context);
         particleSystem = new ParticleSystem(10000);
         globalStartTime = System.nanoTime();
@@ -161,20 +179,25 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                 R.drawable.front, R.drawable.back
         });
 
+
         final Geometry.Vector particleDirection = new Geometry.Vector(0f, 0.5f, 0f);
 
         final float angleVarianceInDegrees = 5f;
-        final float speedVariance = 1f;
+        final float speedVariance = 1.0f;
+
         redParticleShooter = new ParticleShooter(new Geometry.Point(-1f, 0f, 0f), particleDirection, Color.rgb(255, 50, 0), angleVarianceInDegrees, speedVariance);
-        greenParticleShooter = new ParticleShooter(new Geometry.Point(0f, 0f, 0f), particleDirection, Color.rgb(25, 255, 25), angleVarianceInDegrees, speedVariance);
+        //greenParticleShooter = new ParticleShooter(new Geometry.Point(-1f, 0f, 0f), particleDirection, Color.rgb(25, 255, 25), angleVarianceInDegrees, speedVariance);
         blueParticleShooter = new ParticleShooter(new Geometry.Point(1f, 0f, 0f), particleDirection, Color.rgb(5, 50, 255), angleVarianceInDegrees, speedVariance);
 
 
+        btn_pic = TextureHelper.loadTexture(context, R.drawable.arrow);
+        btn_pic_pressed = TextureHelper.loadTexture(context, R.drawable.arrow_pressed);
+        car_pic_back = TextureHelper.loadTexture(context, R.drawable.car_back);
+        car_pic_front = TextureHelper.loadTexture(context, R.drawable.car_front);
+        car_pic_left = TextureHelper.loadTexture(context, R.drawable.car_left);
+        car_pic_right = TextureHelper.loadTexture(context, R.drawable.car_right);
         particle = TextureHelper.loadTexture(context, R.drawable.particle);
-        go_btn_pic = TextureHelper.loadTexture(context, R.drawable.go);
-        go_btn_pic_pressed = TextureHelper.loadTexture(context, R.drawable.go_pressed);
-        back_btn_pic = TextureHelper.loadTexture(context, R.drawable.goback);
-        back_btn_pic_pressed = TextureHelper.loadTexture(context, R.drawable.goback_pressed);
+        car_pic = car_pic_back;
     }
 
     @Override
@@ -195,13 +218,17 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         drawSkybox();
         glDepthFunc(GL_LESS);//恢复设置
 
+
         glDepthMask(false);//设置深度缓冲区只读，这样粒子间不会因为深度缓冲区互相遮挡，主要针对3D透明问题
         glEnable(GLES20.GL_BLEND);//混合粒子，粒子越多越亮
         /*GL_SRC_ALPHA 表示源颜色（图片）使用源颜色的alpha值来作为因子,GL_ONE_MINUS_SRC_ALPH 表示目标颜色（背景）使用1.0减去源颜色的alpha值来作为因子
         这样一来，源颜色的alpha值越大， 则产生的新颜色中源颜色所占比例就越大，可以实现部分透明*/
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        drawCar();
         drawGoButton();//必须先设置深度缓冲区为只读，不然透明部分后面的物体是不会绘制的，默认的颜色就是glClearColor(1f, 1.0f, 1.0f, 0.0f);
         drawBackButton();
+        drawLeftButton();
+        drawRightButton();
         glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE);//表示完全使用源颜色和目标颜色，最终的颜色实际上就是两种颜色的简单相加
         drawParticles();
         glDisable(GL_BLEND);
@@ -217,9 +244,9 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
 
         textureProgram.useProgram();
         if (is_go_btn_pressed)
-            textureProgram.setUniforms(modelMatrix, go_btn_pic_pressed);
+            textureProgram.setUniforms(modelMatrix, btn_pic_pressed);
         else
-            textureProgram.setUniforms(modelMatrix, go_btn_pic);
+            textureProgram.setUniforms(modelMatrix, btn_pic);
         goButton.bindData(textureProgram);
         goButton.draw();
     }
@@ -228,15 +255,61 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         float translate_y_2 = translate_y - (btn_top - btn_bottom);
         setIdentityM(modelMatrix, 0);
         translateM(modelMatrix, 0, translate_x, translate_y_2, -1f);//将矩阵沿着z轴偏移，这边直接是NDC坐标，所以-1代表最近的
+        rotateM(modelMatrix, 0, -180, 0f, 0f, 1f);//将矩阵沿着z轴旋转180度
 
         textureProgram.useProgram();
         if (is_back_btn_pressed)
-            textureProgram.setUniforms(modelMatrix, back_btn_pic_pressed);
+            textureProgram.setUniforms(modelMatrix, btn_pic_pressed);
         else
-            textureProgram.setUniforms(modelMatrix, back_btn_pic);
+            textureProgram.setUniforms(modelMatrix, btn_pic);
         backButton.bindData(textureProgram);
         backButton.draw();
 
+    }
+
+    private void drawLeftButton() {
+        float translate_y_2 = translate_y - (btn_top - btn_bottom) / 2;
+        float translate_x_2 = translate_x - (btn_top - btn_bottom);
+        setIdentityM(modelMatrix, 0);
+        translateM(modelMatrix, 0, translate_x_2, translate_y_2, -1f);//将矩阵沿着z轴偏移，这边直接是NDC坐标，所以-1代表最近的
+        rotateM(modelMatrix, 0, 90, 0f, 0f, 1f);//将矩阵沿着z轴旋转180度
+
+        textureProgram.useProgram();
+        if (is_left_btn_pressed)
+            textureProgram.setUniforms(modelMatrix, btn_pic_pressed);
+        else
+            textureProgram.setUniforms(modelMatrix, btn_pic);
+        leftButton.bindData(textureProgram);
+        leftButton.draw();
+
+    }
+
+    private void drawRightButton() {
+        float translate_y_2 = translate_y - (btn_top - btn_bottom) / 2;
+        float translate_x_2 = translate_x + (btn_right - btn_left);
+        setIdentityM(modelMatrix, 0);
+        translateM(modelMatrix, 0, translate_x_2, translate_y_2, -1f);//将矩阵沿着z轴偏移，这边直接是NDC坐标，所以-1代表最近的
+        rotateM(modelMatrix, 0, 270, 0f, 0f, 1f);//将矩阵沿着z轴旋转180度
+
+        textureProgram.useProgram();
+        if (is_left_btn_pressed)
+            textureProgram.setUniforms(modelMatrix, btn_pic_pressed);
+        else
+            textureProgram.setUniforms(modelMatrix, btn_pic);
+        rightButton.bindData(textureProgram);
+        rightButton.draw();
+
+    }
+
+    private void drawCar() {
+        setIdentityM(modelMatrix, 0);
+
+        //rotateM(modelMatrix, 0, carCurrentRotation, 0f, 0f, 1f);//将矩阵沿着x轴旋转-90度
+        updateMvMatrix();
+        textureProgram.useProgram();
+        textureProgram.setUniforms(modelviewProjectionMatrix, car_pic);
+        car.bindData(textureProgram);
+        car.draw();
     }
 
     private void updateViewMatrices() {
@@ -261,6 +334,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         multiplyMM(modelviewProjectionMatrix, 0, projectionMatrix, 0, tempMatrix, 0);
     }
 
+
     private void drawSkybox() {
         setIdentityM(modelMatrix, 0);
         updateMvMatrixForSkybox();
@@ -275,10 +349,11 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
     private void drawParticles() {
         float currentTime = (System.nanoTime() - globalStartTime) / 2000000000f;
         redParticleShooter.addParticles(particleSystem, currentTime, 5);
-        greenParticleShooter.addParticles(particleSystem, currentTime, 5);
+        //greenParticleShooter.addParticles(particleSystem, currentTime, 5);
         blueParticleShooter.addParticles(particleSystem, currentTime, 5);
 
         setIdentityM(modelMatrix, 0);
+
         updateMvMatrix();
 
         particleShaderProgram.useProgram();
@@ -291,8 +366,8 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
 
     private void drawHeightmap() {
         setIdentityM(modelMatrix, 0);
-        translateM(modelMatrix, 0, 0f, 0f, distance);
         scaleM(modelMatrix, 0, 100f, 2f, 300f);
+        translateM(modelMatrix, 0, xDistance, 0f, zDistance);//平移放在缩放后面，这样distance代表的就是原始地图对应的平移值
 
         updateMvMatrix();
         heightmapProgram.useProgram();
@@ -326,23 +401,153 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         updateViewMatrices();
     }
 
+    public boolean isGoBtnClick(float x, float y) {
+        if (x >= (btn_left + translate_x) && x <= (btn_right + translate_x) && y >= (btn_bottom + translate_y) && y <= (btn_top + translate_y)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isBackBtnClick(float x, float y) {
+        float btn_height = btn_top - btn_bottom;
+        if (x >= (btn_left + translate_x) && x <= (btn_right + translate_x) && y >= (btn_bottom + translate_y - btn_height) && y <= (btn_top + translate_y - btn_height)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isLeftBtnClick(float x, float y) {
+        float btn_height = btn_top - btn_bottom;
+        float btn_width = btn_right - btn_left;
+
+        if (x >= (btn_left + translate_x - btn_height) && x <= (btn_right + translate_x) && y >= (btn_bottom + translate_y - btn_height / 2 - btn_width) && y <= (btn_top + translate_y - btn_height / 2)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isRightBtnClick(float x, float y) {
+        float btn_height = btn_top - btn_bottom;
+        float btn_width = btn_right - btn_left;
+        if (x >= (btn_left + translate_x + btn_width) && x <= (btn_right + translate_x + btn_width + btn_height) && y >= (btn_bottom + translate_y - btn_height / 2 - btn_width) && y <= (btn_top + translate_y - btn_height / 2)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public void handleButtonClick(float x, float y, boolean isActionUP) {
-        if (x >= (btn_left + translate_x) && x <= (btn_right + translate_x)) {
-            float btn_height = btn_top - btn_bottom;
-            if (y >= (btn_bottom + translate_y) && y <= (btn_top + translate_y)) {
-                if (!isActionUP) {
-                    distance += 1;//go button
-                    is_go_btn_pressed = true;
-                } else {
-                    is_go_btn_pressed = false;
-                }
-            } else if (y >= (btn_bottom + translate_y - btn_height) && y <= (btn_top + translate_y - btn_height)) {
-                if (!isActionUP) {
-                    distance -= 1;//back button
-                    is_back_btn_pressed = true;
-                } else {
-                    is_back_btn_pressed = false;
-                }
+        if (isGoBtnClick(x, y)) {
+            car_pic = car_pic_back;
+            if (!isActionUP) {
+                is_go_btn_pressed = true;
+                new Thread() {
+                    public void run() {
+                        while (is_go_btn_pressed) {
+                            if (row > 0 && row < heightmap.height) {
+                                Geometry.Point before = heightmap.getPoint(heightmap.pixels, row, col);
+                                row -= 1;//每次前进相当于前进一个像素点
+                                Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
+                                float dZ = result.z - before.z;
+                                zDistance -= dZ;//arrow button，地图移动方向和前进方向相反
+                                car.center.y = result.y * 2;//与地图y轴缩放值相同
+                                car.updateData();
+                            }
+                            try {
+                                Thread.sleep(50);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }.start();
+
+            } else {
+                is_go_btn_pressed = false;
+            }
+        } else if (isBackBtnClick(x, y)) {
+            car_pic = car_pic_front;
+            if (!isActionUP) {
+                is_back_btn_pressed = true;
+                new Thread() {
+                    public void run() {
+                        while (is_back_btn_pressed) {
+                            if (row >= 0 && row < heightmap.height - 1) {
+                                Geometry.Point before = heightmap.getPoint(heightmap.pixels, row, col);
+                                row += 1;
+                                Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
+                                float dZ = result.z - before.z;
+                                zDistance -= dZ;//back button
+                                car.center.y = result.y * 2;
+                                car.updateData();
+                            }
+                            try {
+                                Thread.sleep(50);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }.start();
+            } else {
+                is_back_btn_pressed = false;
+            }
+        } else if (isLeftBtnClick(x, y)) {
+            car_pic = car_pic_left;
+            if (!isActionUP) {
+                is_left_btn_pressed = true;
+                new Thread() {
+                    public void run() {
+                        while (is_left_btn_pressed) {
+                            if (col > 0 && col < heightmap.width - 1) {
+                                Geometry.Point before = heightmap.getPoint(heightmap.pixels, row, col);
+                                col -= 1;
+                                Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
+                                float dZ = result.x - before.x;
+                                xDistance -= dZ;//back button
+                                car.center.y = result.y * 2;
+                                car.updateData();
+                            }
+                            try {
+                                Thread.sleep(50);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }.start();
+            } else {
+                is_left_btn_pressed = false;
+            }
+        } else if (isRightBtnClick(x, y)) {
+            car_pic = car_pic_right;
+            if (!isActionUP) {
+                is_right_btn_pressed = true;
+                new Thread() {
+                    public void run() {
+                        while (is_right_btn_pressed) {
+                            if (col >= 0 && col < heightmap.width - 1) {
+                                Geometry.Point before = heightmap.getPoint(heightmap.pixels, row, col);
+                                col += 1;
+                                Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
+                                float dZ = result.x - before.x;
+                                xDistance -= dZ;//back button
+                                car.center.y = result.y * 2;
+                                car.updateData();
+                            }
+                            try {
+                                Thread.sleep(50);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }.start();
+            } else {
+                is_right_btn_pressed = false;
             }
         }
     }

@@ -12,7 +12,7 @@ import static android.opengl.Matrix.setRotateEulerM;
  */
 
 public class ParticleShooter {
-    private final Geometry.Point position;
+    public Geometry.Point position;
     private final Geometry.Vector direction;
     private final int color;
 
