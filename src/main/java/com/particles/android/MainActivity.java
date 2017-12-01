@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
                         glSurfaceView.queueEvent(new Runnable() {
                             @Override
                             public void run() {
-                                particlesRender.handleButtonClick(normalizedX, normalizedY, false);
+                                particlesRender.handleButtonClick(normalizedX, normalizedY, true);
 
                             }
                         });
@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
                         glSurfaceView.queueEvent(new Runnable() {
                             @Override
                             public void run() {
-                                particlesRender.handleButtonClick(normalizedX, normalizedY, true);
+                                particlesRender.handleButtonClick(normalizedX, normalizedY, false);
                             }
                         });
                     }

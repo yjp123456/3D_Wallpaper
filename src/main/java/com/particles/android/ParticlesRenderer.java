@@ -19,6 +19,7 @@ import com.particles.android.programs.SkyboxShaderProgram;
 import com.particles.android.programs.TextureShaderProgram;
 import com.particles.android.util.Geometry;
 import com.particles.android.util.MatrixHelper;
+import com.particles.android.util.TaskRunner;
 import com.particles.android.util.TextureHelper;
 
 import javax.microedition.khronos.egl.EGLConfig;
@@ -100,6 +101,8 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
     private int car_pic_left;
     private int car_pic_right;
     private int car_pic;
+
+    private TaskRunner clickEvent = new TaskRunner(1);
 
 
     private SkyboxShaderProgram skyboxShaderProgram;
@@ -292,7 +295,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         rotateM(modelMatrix, 0, 270, 0f, 0f, 1f);//将矩阵沿着z轴旋转180度
 
         textureProgram.useProgram();
-        if (is_left_btn_pressed)
+        if (is_right_btn_pressed)
             textureProgram.setUniforms(modelMatrix, btn_pic_pressed);
         else
             textureProgram.setUniforms(modelMatrix, btn_pic);
@@ -439,12 +442,14 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         }
     }
 
-    public void handleButtonClick(float x, float y, boolean isActionUP) {
+    public void handleButtonClick(float x, float y, boolean isActionDown) {
         if (isGoBtnClick(x, y)) {
             car_pic = car_pic_back;
-            if (!isActionUP) {
+            if (isActionDown) {
                 is_go_btn_pressed = true;
-                new Thread() {
+                clickEvent = new TaskRunner(1);
+                clickEvent.execute(new Runnable() {
+                    @Override
                     public void run() {
                         while (is_go_btn_pressed) {
                             if (row > 0 && row < heightmap.height) {
@@ -463,16 +468,18 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                             }
                         }
                     }
-                }.start();
-
+                });
             } else {
                 is_go_btn_pressed = false;
+                clickEvent.stop();
             }
         } else if (isBackBtnClick(x, y)) {
             car_pic = car_pic_front;
-            if (!isActionUP) {
+            clickEvent = new TaskRunner(1);
+            if (isActionDown) {
                 is_back_btn_pressed = true;
-                new Thread() {
+                clickEvent.execute(new Runnable() {
+                    @Override
                     public void run() {
                         while (is_back_btn_pressed) {
                             if (row >= 0 && row < heightmap.height - 1) {
@@ -491,18 +498,22 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                             }
                         }
                     }
-                }.start();
+
+                });
             } else {
                 is_back_btn_pressed = false;
+                clickEvent.stop();
             }
         } else if (isLeftBtnClick(x, y)) {
             car_pic = car_pic_left;
-            if (!isActionUP) {
+            if (isActionDown) {
                 is_left_btn_pressed = true;
-                new Thread() {
+                clickEvent = new TaskRunner(1);
+                clickEvent.execute(new Runnable() {
+                    @Override
                     public void run() {
                         while (is_left_btn_pressed) {
-                            if (col > 0 && col < heightmap.width - 1) {
+                            if (col >= 0 && col < heightmap.width) {
                                 Geometry.Point before = heightmap.getPoint(heightmap.pixels, row, col);
                                 col -= 1;
                                 Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
@@ -518,18 +529,22 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                             }
                         }
                     }
-                }.start();
+                });
+
             } else {
                 is_left_btn_pressed = false;
+                clickEvent.stop();
             }
         } else if (isRightBtnClick(x, y)) {
             car_pic = car_pic_right;
-            if (!isActionUP) {
+            if (isActionDown) {
                 is_right_btn_pressed = true;
-                new Thread() {
+                clickEvent = new TaskRunner(1);
+                clickEvent.execute(new Runnable() {
+                    @Override
                     public void run() {
                         while (is_right_btn_pressed) {
-                            if (col >= 0 && col < heightmap.width - 1) {
+                            if (col > 0 && col < heightmap.width - 1) {
                                 Geometry.Point before = heightmap.getPoint(heightmap.pixels, row, col);
                                 col += 1;
                                 Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
@@ -545,9 +560,10 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                             }
                         }
                     }
-                }.start();
+                });
             } else {
                 is_right_btn_pressed = false;
+                clickEvent.stop();
             }
         }
     }
