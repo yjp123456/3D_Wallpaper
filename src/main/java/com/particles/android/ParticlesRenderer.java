@@ -307,6 +307,11 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
 
     private void drawCar() {
         setIdentityM(modelMatrix, 0);
+        scaleM(modelMatrix, 0, 100f, 2f, 300f);//和heightmap缩放保持一致
+        translateM(modelMatrix, 0, 0f, 0f, car.center.z);
+        car.xSize /= 100f;
+        car.ySize /= 2f;
+        car.updateData();
 
         //rotateM(modelMatrix, 0, carCurrentRotation, 0f, 0f, 1f);//将矩阵沿着x轴旋转-90度
         updateMvMatrix();
@@ -458,8 +463,8 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                                 Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
                                 float dZ = result.z - before.z;
                                 zDistance -= dZ;//arrow button，地图移动方向和前进方向相反
-                                car.center.y = result.y * 2;//与地图y轴缩放值相同
-                                car.updateData();
+                                car.center.y = result.y ;//与地图y轴缩放值相同
+
                             }
                             try {
                                 Thread.sleep(50);
@@ -486,8 +491,8 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                                 Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
                                 float dZ = result.z - before.z;
                                 zDistance -= dZ;//back button
-                                car.center.y = result.y * 2;
-                                car.updateData();
+                                car.center.y = result.y;
+
                             }
                             try {
                                 Thread.sleep(50);
@@ -515,8 +520,8 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                                 Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
                                 float dZ = result.x - before.x;
                                 xDistance -= dZ;//back button
-                                car.center.y = result.y * 2;
-                                car.updateData();
+                                car.center.y = result.y;
+
                             }
                             try {
                                 Thread.sleep(50);
@@ -544,8 +549,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                                 Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
                                 float dZ = result.x - before.x;
                                 xDistance -= dZ;//back button
-                                car.center.y = result.y * 2;
-                                car.updateData();
+                                car.center.y = result.y;
                             }
                             try {
                                 Thread.sleep(50);

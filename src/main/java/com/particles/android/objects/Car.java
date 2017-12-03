@@ -20,7 +20,8 @@ public class Car {
     private static final int TEXTURE_COORDINATES_COMPONENT_COUNT = 2;
     private static final int STRIDE = (POSTION_COMPONENT_COUNT + TEXTURE_COORDINATES_COMPONENT_COUNT) * BYTE_PER_FLOAT;
     public Geometry.Point center;
-    public float size = 0.3f;
+    public float xSize = 0.3f;
+    public float ySize = 0.3f;
 
     private float[] VERTEX_DATA;
 
@@ -31,28 +32,25 @@ public class Car {
         VERTEX_DATA = new float[]{
                 //opengl在手机上x,y,z坐标范围都是[-1,1],左下角是[-1,-1],右上角是[1,1]
                 //triangle FAN  x,y,S,T S和T代表纹理坐标，范围都是[0,1],纹理左上角是（0,0），右下角是（1,1)
-                center.x, center.y + size, 0.5f, 0.5f,
-                center.x - size, center.y, 0f, 1.0f,
-                center.x + size, center.y, 1f, 1f,
-                center.x + size, center.y + 2 * size, 1f, 0.0f,
-                center.x - size, center.y + 2 * size, 0f, 0.0f,
-                center.x - size, center.y, 0f, 1f
+                center.x, center.y + ySize, 0.5f, 0.5f,
+                center.x - xSize, center.y, 0f, 1.0f,
+                center.x + xSize, center.y, 1f, 1f,
+                center.x + xSize, center.y + 2 * ySize, 1f, 0.0f,
+                center.x - xSize, center.y + 2 * ySize, 0f, 0.0f,
+                center.x - xSize, center.y, 0f, 1f
         };
         vertexArray = new VertexArray(VERTEX_DATA);
     }
 
     public void updateData() {
-        VERTEX_DATA = new float[]{
-                //opengl在手机上x,y,z坐标范围都是[-1,1],左下角是[-1,-1],右上角是[1,1]
-                //triangle FAN  x,y,S,T S和T代表纹理坐标，范围都是[0,1],纹理左上角是（0,0），右下角是（1,1)
-                center.x, center.y + size, 0.5f, 0.5f,
-                center.x - size, center.y, 0f, 1.0f,
-                center.x + size, center.y, 1f, 1f,
-                center.x + size, center.y + 2 * size, 1f, 0.0f,
-                center.x - size, center.y + 2 * size, 0f, 0.0f,
-                center.x - size, center.y, 0f, 1f
-        };
-        vertexArray = new VertexArray(VERTEX_DATA);
+        VERTEX_DATA[1] = center.y + ySize;
+        VERTEX_DATA[4] = center.x - xSize;
+        VERTEX_DATA[8] =  center.x + xSize;
+        VERTEX_DATA[12] = center.x + xSize;
+        VERTEX_DATA[13] = center.y + 2 * ySize;
+        VERTEX_DATA[16] = center.x - xSize;
+        VERTEX_DATA[17] = center.y + 2 * ySize;
+        VERTEX_DATA[20] = center.x - xSize;
     }
 
     public void bindData(TextureShaderProgram textureShaderProgram) {
