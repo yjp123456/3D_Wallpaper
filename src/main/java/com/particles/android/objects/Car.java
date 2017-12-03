@@ -20,8 +20,8 @@ public class Car {
     private static final int TEXTURE_COORDINATES_COMPONENT_COUNT = 2;
     private static final int STRIDE = (POSTION_COMPONENT_COUNT + TEXTURE_COORDINATES_COMPONENT_COUNT) * BYTE_PER_FLOAT;
     public Geometry.Point center;
-    public float xSize = 0.3f / 100;//取heightmap x轴缩放值得倒数
-    public float ySize = 0.3f / 2;//取heightmap y轴缩放值的倒数
+    public float xSize = 0.3f / 100;//需要乘于heightmap x轴缩放值得倒数
+    public float ySize = 0.3f / 2;//需要乘于heightmap y轴缩放值的倒数
 
     private float[] VERTEX_DATA;
 

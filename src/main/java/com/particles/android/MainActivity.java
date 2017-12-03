@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
         glSurfaceView.setOnTouchListener(new View.OnTouchListener() {
             float previousX, previousY;
+            boolean isActionPointer = false;
 
             @Override
             public boolean onTouch(View view, MotionEvent event) {
@@ -51,7 +52,12 @@ public class MainActivity extends AppCompatActivity {
                     if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
                         previousX = event.getX();//不传index，默认是获取第一个触点的坐标
                         previousY = event.getY();
+                        if (action == MotionEvent.ACTION_POINTER_DOWN)
+                            isActionPointer = true;
+                        else
+                            isActionPointer = false;
                         index = event.getActionIndex();
+
                         final float normalizedX = (event.getX(index) / (float) view.getWidth()) * 2 - 1;
                         final float normalizedY = -((event.getY(index) / (float) view.getHeight()) * 2 - 1);
                         glSurfaceView.queueEvent(new Runnable() {
@@ -61,23 +67,25 @@ public class MainActivity extends AppCompatActivity {
                             }
                         });
                     } else if (action == MotionEvent.ACTION_MOVE) {
-                        final float deltaX = event.getX() - previousX;
-                        final float deltaY = event.getY() - previousY;
-                        previousX = event.getX();
-                        previousY = event.getY();
+                        if (!isActionPointer) {//多点触控下不移动
+                            final float deltaX = event.getX() - previousX;
+                            final float deltaY = event.getY() - previousY;
+                            previousX = event.getX();
+                            previousY = event.getY();
 
-                        glSurfaceView.queueEvent(new Runnable() {
-                            @Override
-                            public void run() {
-                                particlesRender.handleTouchDrag(deltaX, deltaY);
-                            }
-                        });
-
+                            glSurfaceView.queueEvent(new Runnable() {
+                                @Override
+                                public void run() {
+                                    particlesRender.handleTouchDrag(deltaX, deltaY);
+                                }
+                            });
+                        }
 
                     } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
                         index = event.getActionIndex();
-                        final float normalizedX = (event.getX(index) / (float) view.getWidth()) * 2 - 1;
-                        final float normalizedY = -((event.getY(index) / (float) view.getHeight()) * 2 - 1);
+                        final float normalizedX, normalizedY;
+                        normalizedX = (event.getX(index) / (float) view.getWidth()) * 2 - 1;
+                        normalizedY = -((event.getY(index) / (float) view.getHeight()) * 2 - 1);
 
                         glSurfaceView.queueEvent(new Runnable() {
                             @Override
