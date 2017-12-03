@@ -113,6 +113,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
 
     private float zDistance = 0f;
     private float xDistance = 0f;
+    private float carDY = 0f;
     private float btn_left = -0.1f;
     private float btn_right = 0.1f;
     private float btn_bottom = -0.1f;
@@ -308,10 +309,10 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
     private void drawCar() {
         setIdentityM(modelMatrix, 0);
         scaleM(modelMatrix, 0, 100f, 2f, 300f);//和heightmap缩放保持一致
-        translateM(modelMatrix, 0, 0f, 0f, car.center.z);
-        car.xSize /= 100f;
-        car.ySize /= 2f;
-        car.updateData();
+
+        //y轴平移是因为按钮控制，z轴平移是为了将小车放到初始位置所在的z轴，这样对应的地图高度才是对的
+        translateM(modelMatrix, 0, 0f, carDY, car.center.z);
+
 
         //rotateM(modelMatrix, 0, carCurrentRotation, 0f, 0f, 1f);//将矩阵沿着x轴旋转-90度
         updateMvMatrix();
@@ -463,7 +464,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                                 Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
                                 float dZ = result.z - before.z;
                                 zDistance -= dZ;//arrow button，地图移动方向和前进方向相反
-                                car.center.y = result.y ;//与地图y轴缩放值相同
+                                carDY = result.y - car.center.y;
 
                             }
                             try {
@@ -491,7 +492,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                                 Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
                                 float dZ = result.z - before.z;
                                 zDistance -= dZ;//back button
-                                car.center.y = result.y;
+                                carDY = result.y - car.center.y;
 
                             }
                             try {
@@ -514,13 +515,13 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                     @Override
                     public void run() {
                         while (is_left_btn_pressed) {
-                            if (col >= 0 && col < heightmap.width) {
+                            if (col > 0 && col < heightmap.width) {
                                 Geometry.Point before = heightmap.getPoint(heightmap.pixels, row, col);
                                 col -= 1;
                                 Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
                                 float dZ = result.x - before.x;
                                 xDistance -= dZ;//back button
-                                car.center.y = result.y;
+                                carDY = result.y - car.center.y;
 
                             }
                             try {
@@ -543,13 +544,13 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                     @Override
                     public void run() {
                         while (is_right_btn_pressed) {
-                            if (col > 0 && col < heightmap.width - 1) {
+                            if (col >= 0 && col < heightmap.width - 1) {
                                 Geometry.Point before = heightmap.getPoint(heightmap.pixels, row, col);
                                 col += 1;
                                 Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
                                 float dZ = result.x - before.x;
                                 xDistance -= dZ;//back button
-                                car.center.y = result.y;
+                                carDY = result.y - car.center.y;
                             }
                             try {
                                 Thread.sleep(50);

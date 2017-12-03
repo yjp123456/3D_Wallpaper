@@ -20,8 +20,8 @@ public class Car {
     private static final int TEXTURE_COORDINATES_COMPONENT_COUNT = 2;
     private static final int STRIDE = (POSTION_COMPONENT_COUNT + TEXTURE_COORDINATES_COMPONENT_COUNT) * BYTE_PER_FLOAT;
     public Geometry.Point center;
-    public float xSize = 0.3f;
-    public float ySize = 0.3f;
+    public float xSize = 0.003f;//取heightmap x轴缩放值得倒数
+    public float ySize = 0.15f;//取heightmap y轴缩放值的倒数
 
     private float[] VERTEX_DATA;
 
@@ -40,17 +40,6 @@ public class Car {
                 center.x - xSize, center.y, 0f, 1f
         };
         vertexArray = new VertexArray(VERTEX_DATA);
-    }
-
-    public void updateData() {
-        VERTEX_DATA[1] = center.y + ySize;
-        VERTEX_DATA[4] = center.x - xSize;
-        VERTEX_DATA[8] =  center.x + xSize;
-        VERTEX_DATA[12] = center.x + xSize;
-        VERTEX_DATA[13] = center.y + 2 * ySize;
-        VERTEX_DATA[16] = center.x - xSize;
-        VERTEX_DATA[17] = center.y + 2 * ySize;
-        VERTEX_DATA[20] = center.x - xSize;
     }
 
     public void bindData(TextureShaderProgram textureShaderProgram) {
