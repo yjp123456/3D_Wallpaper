@@ -6,7 +6,9 @@ import android.content.Intent;
 import android.content.pm.ConfigurationInfo;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.support.v4.view.MotionEventCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -43,19 +45,22 @@ public class MainActivity extends AppCompatActivity {
             public boolean onTouch(View view, MotionEvent event) {
                 if (event != null) {
                     //handle button click
-                    final float normalizedX = (event.getX() / (float) view.getWidth()) * 2 - 1;
-                    final float normalizedY = -((event.getY() / (float) view.getHeight()) * 2 - 1);
-                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                        previousX = event.getX();
+                    int index;
+                    int action = event.getActionMasked();//处理多点触控必须用getActionMasked(),而不是getAction()
+
+                    if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                        previousX = event.getX();//不传index，默认是获取第一个触点的坐标
                         previousY = event.getY();
+                        index = event.getActionIndex();
+                        final float normalizedX = (event.getX(index) / (float) view.getWidth()) * 2 - 1;
+                        final float normalizedY = -((event.getY(index) / (float) view.getHeight()) * 2 - 1);
                         glSurfaceView.queueEvent(new Runnable() {
                             @Override
                             public void run() {
                                 particlesRender.handleButtonClick(normalizedX, normalizedY, true);
-
                             }
                         });
-                    } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                    } else if (action == MotionEvent.ACTION_MOVE) {
                         final float deltaX = event.getX() - previousX;
                         final float deltaY = event.getY() - previousY;
                         previousX = event.getX();
@@ -68,7 +73,12 @@ public class MainActivity extends AppCompatActivity {
                             }
                         });
 
-                    } else if (event.getAction() == MotionEvent.ACTION_UP) {
+
+                    } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                        index = event.getActionIndex();
+                        final float normalizedX = (event.getX(index) / (float) view.getWidth()) * 2 - 1;
+                        final float normalizedY = -((event.getY(index) / (float) view.getHeight()) * 2 - 1);
+
                         glSurfaceView.queueEvent(new Runnable() {
                             @Override
                             public void run() {
