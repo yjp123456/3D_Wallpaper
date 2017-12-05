@@ -13,6 +13,7 @@ import com.particles.android.objects.Heightmap;
 import com.particles.android.objects.ParticleShooter;
 import com.particles.android.objects.ParticleSystem;
 import com.particles.android.objects.Skybox;
+import com.particles.android.objects.UFO;
 import com.particles.android.programs.HeightmapShaderProgram;
 import com.particles.android.programs.ParticleShaderProgram;
 import com.particles.android.programs.SkyboxShaderProgram;
@@ -21,6 +22,8 @@ import com.particles.android.util.Geometry;
 import com.particles.android.util.MatrixHelper;
 import com.particles.android.util.TaskRunner;
 import com.particles.android.util.TextureHelper;
+
+import java.util.Random;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -101,6 +104,12 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
     private int car_pic_left;
     private int car_pic_right;
     private int car_pic;
+
+    private int ufo_pic;
+    private UFO[] UFOs;
+    private Geometry.Point globalUFODirection;
+    private final Random random = new Random();
+
 
     private TaskRunner leftToRightEvent = new TaskRunner(1);
     private TaskRunner topToBottomEvent = new TaskRunner(1);
@@ -185,6 +194,15 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         });
 
 
+        globalUFODirection = new Geometry.Point(0f, 0f, 1f);
+        UFOs = new UFO[6];
+        float x1 = heightmap.getPoint(heightmap.pixels, row, col - 2).x;
+        float x2 = heightmap.getPoint(heightmap.pixels, row, col + 2).x;
+        addUFOs(0, 2, new Geometry.Point(x1, 0.7f, 0f));
+        addUFOs(2, 2, new Geometry.Point(0f, 0.7f, 0f));
+        addUFOs(4, 2, new Geometry.Point(x2, 0.7f, 0f));
+
+
         final Geometry.Vector particleDirection = new Geometry.Vector(0f, 0.5f, 0f);
 
         final float angleVarianceInDegrees = 5f;
@@ -202,6 +220,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         car_pic_left = TextureHelper.loadTexture(context, R.drawable.car_left);
         car_pic_right = TextureHelper.loadTexture(context, R.drawable.car_right);
         particle = TextureHelper.loadTexture(context, R.drawable.particle);
+        ufo_pic = TextureHelper.loadTexture(context, R.drawable.ufo);
         car_pic = car_pic_back;
     }
 
@@ -230,6 +249,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         这样一来，源颜色的alpha值越大， 则产生的新颜色中源颜色所占比例就越大，可以实现部分透明*/
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         drawCar();
+        drawUFO();
         drawGoButton();//必须先设置深度缓冲区为只读，不然透明部分后面的物体是不会绘制的，默认的颜色就是glClearColor(1f, 1.0f, 1.0f, 0.0f);
         drawBackButton();
         drawLeftButton();
@@ -304,6 +324,43 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         rightButton.bindData(textureProgram);
         rightButton.draw();
 
+    }
+
+    public void addUFOs(int offset, int count, Geometry.Point startPosition) {
+        for (int i = offset; i < offset + count; i++) {
+            // 生成随意的速度
+            float speedVariance = random.nextFloat() / 100;
+
+            float zRandom = (random.nextFloat() - 1f) / 2;//随机选一个z在[-0.5,0]的位置
+            Geometry.Point randPosition = new Geometry.Point(startPosition.x, startPosition.y, zRandom);
+            Geometry.Vector thisDirection = new Geometry.Vector(globalUFODirection.x * speedVariance,
+                    globalUFODirection.y * speedVariance,
+                    globalUFODirection.z * speedVariance);
+            UFOs[i] = new UFO(randPosition, thisDirection, globalStartTime);
+        }
+    }
+
+    private void drawUFO() {
+        for (int i = 0; i < UFOs.length; i++) {
+            UFO ufo = UFOs[i];
+            float currentTime = (System.nanoTime() - ufo.startTime) / 1000000000f;//换算成秒
+            setIdentityM(modelMatrix, 0);
+            scaleM(modelMatrix, 0, 100f, 2f, 300f);//和heightmap缩放保持一致
+
+            float translate_z = ufo.direction.z * currentTime + ufo.center.z;
+            if (translate_z >= 1) {
+                ufo.startTime = System.nanoTime();
+            }
+            translateM(modelMatrix, 0, 0f, 0f, translate_z + ufo.center.z);
+
+
+            //rotateM(modelMatrix, 0, carCurrentRotation, 0f, 0f, 1f);//将矩阵沿着x轴旋转-90度
+            updateMvMatrix();
+            textureProgram.useProgram();
+            textureProgram.setUniforms(modelviewProjectionMatrix, ufo_pic);
+            ufo.bindData(textureProgram);
+            ufo.draw();
+        }
     }
 
     private void drawCar() {
@@ -393,6 +450,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         heightmap.bindData(heightmapProgram);
         heightmap.draw();
     }
+
 
     public void handleTouchDrag(float deltaX, float deltaY) {
         xRotation += deltaX / 16f;
