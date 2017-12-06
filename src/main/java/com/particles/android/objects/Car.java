@@ -1,6 +1,7 @@
 package com.particles.android.objects;
 
 
+import com.particles.android.ParticlesRenderer;
 import com.particles.android.data.VertexArray;
 import com.particles.android.programs.TextureShaderProgram;
 import com.particles.android.util.Geometry;
@@ -20,8 +21,8 @@ public class Car {
     private static final int TEXTURE_COORDINATES_COMPONENT_COUNT = 2;
     private static final int STRIDE = (POSTION_COMPONENT_COUNT + TEXTURE_COORDINATES_COMPONENT_COUNT) * BYTE_PER_FLOAT;
     public Geometry.Point center;
-    public float xSize = 0.3f / 100;//需要乘于heightmap x轴缩放值得倒数
-    public float ySize = 0.3f / 2;//需要乘于heightmap y轴缩放值的倒数
+    public float xSize = 0.3f / ParticlesRenderer.xScale;//需要乘于heightmap x轴缩放值得倒数
+    public float ySize = 0.3f / ParticlesRenderer.yScale;//需要乘于heightmap y轴缩放值的倒数
 
     private float[] VERTEX_DATA;
 

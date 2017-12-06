@@ -120,8 +120,8 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
     private int skyboxTexture;
     private float xRotation, yRotation;
 
-    private float zDistance = 0f;
-    private float xDistance = 0f;
+    private float zDistance;
+    private float xDistance;
     private float carDY = 0f;
     private float btn_left = -0.1f;
     private float btn_right = 0.1f;
@@ -135,6 +135,9 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
     private float xOffset, yOffset;
     private int row = 0;
     private int col = 0;
+    public static float xScale = 100f;
+    public static float yScale = 2f;
+    public static float zScale = 300f;
 
 
     //光线向量，由(0,0,-1)开始旋转，直到太阳处于屏幕正中间计算出来下面的向量
@@ -198,6 +201,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         UFOs = new UFO[6];
         float x1 = heightmap.getPoint(heightmap.pixels, row, col - 2).x;
         float x2 = heightmap.getPoint(heightmap.pixels, row, col + 2).x;
+        float z = heightmap.getPoint(heightmap.pixels, row, col - 2).z;
         addUFOs(0, 2, new Geometry.Point(x1, 0.7f, 0f));
         addUFOs(2, 2, new Geometry.Point(0f, 0.7f, 0f));
         addUFOs(4, 2, new Geometry.Point(x2, 0.7f, 0f));
@@ -208,9 +212,9 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         final float angleVarianceInDegrees = 5f;
         final float speedVariance = 1.0f;
 
-        redParticleShooter = new ParticleShooter(new Geometry.Point(-1f, 0f, 0f), particleDirection, Color.rgb(255, 50, 0), angleVarianceInDegrees, speedVariance);
+        redParticleShooter = new ParticleShooter(new Geometry.Point(-1f, 0f, z * zScale), particleDirection, Color.rgb(255, 50, 0), angleVarianceInDegrees, speedVariance);
         //greenParticleShooter = new ParticleShooter(new Geometry.Point(-1f, 0f, 0f), particleDirection, Color.rgb(25, 255, 25), angleVarianceInDegrees, speedVariance);
-        blueParticleShooter = new ParticleShooter(new Geometry.Point(1f, 0f, 0f), particleDirection, Color.rgb(5, 50, 255), angleVarianceInDegrees, speedVariance);
+        blueParticleShooter = new ParticleShooter(new Geometry.Point(1f, 0f, z * zScale), particleDirection, Color.rgb(5, 50, 255), angleVarianceInDegrees, speedVariance);
 
 
         btn_pic = TextureHelper.loadTexture(context, R.drawable.arrow);
@@ -222,6 +226,10 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         particle = TextureHelper.loadTexture(context, R.drawable.particle);
         ufo_pic = TextureHelper.loadTexture(context, R.drawable.ufo);
         car_pic = car_pic_back;
+
+        xDistance = 0f;//需要初始化，不然中途重绘会造成值错乱
+        zDistance = 0f;
+        carDY = 0f;
     }
 
     @Override
@@ -345,7 +353,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
             UFO ufo = UFOs[i];
             float currentTime = (System.nanoTime() - ufo.startTime) / 1000000000f;//换算成秒
             setIdentityM(modelMatrix, 0);
-            scaleM(modelMatrix, 0, 100f, 2f, 300f);//和heightmap缩放保持一致
+            scaleM(modelMatrix, 0, xScale, yScale, zScale);//和heightmap缩放保持一致
 
             float translate_z = ufo.direction.z * currentTime + ufo.center.z;
             if (translate_z >= 1) {
@@ -365,7 +373,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
 
     private void drawCar() {
         setIdentityM(modelMatrix, 0);
-        scaleM(modelMatrix, 0, 100f, 2f, 300f);//和heightmap缩放保持一致
+        scaleM(modelMatrix, 0, xScale, yScale, zScale);//和heightmap缩放保持一致
 
         //y轴平移是因为按钮控制，z轴平移是为了将小车放到初始位置所在的z轴，这样对应的地图高度才是对的
         translateM(modelMatrix, 0, 0f, carDY, car.center.z);
@@ -385,6 +393,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         rotateM(viewMatrix, 0, -xRotation, 0f, 1f, 0f);
         System.arraycopy(viewMatrix, 0, viewMatrixForSkybox, 0, viewMatrix.length);
 
+        //Y轴偏移值需要和地图的最大高度对应，地图最高点越大y的偏移值就得越大,同时为了视野范围考虑，z轴偏移值也应该变大
         translateM(viewMatrix, 0, 0 - xOffset, -1.5f - yOffset, -5f);
     }
 
@@ -433,7 +442,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
 
     private void drawHeightmap() {
         setIdentityM(modelMatrix, 0);
-        scaleM(modelMatrix, 0, 100f, 2f, 300f);
+        scaleM(modelMatrix, 0, xScale, yScale, zScale);
         translateM(modelMatrix, 0, xDistance, 0f, zDistance);//平移放在缩放后面，这样distance代表的就是原始地图对应的平移值
 
         updateMvMatrix();
@@ -577,8 +586,8 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                                 Geometry.Point before = heightmap.getPoint(heightmap.pixels, row, col);
                                 col -= 1;
                                 Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
-                                float dZ = result.x - before.x;
-                                xDistance -= dZ;//back button
+                                float dX = result.x - before.x;
+                                xDistance -= dX;//back button
                                 carDY = result.y - car.center.y;
 
                             }
@@ -606,8 +615,8 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
                                 Geometry.Point before = heightmap.getPoint(heightmap.pixels, row, col);
                                 col += 1;
                                 Geometry.Point result = heightmap.getPoint(heightmap.pixels, row, col);
-                                float dZ = result.x - before.x;
-                                xDistance -= dZ;//back button
+                                float dX = result.x - before.x;
+                                xDistance -= dX;//back button
                                 carDY = result.y - car.center.y;
                             }
                             try {
