@@ -84,7 +84,7 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
     private Heightmap heightmap;
     private ParticleSystem particleSystem;
     private ParticleShooter redParticleShooter;
-    //private ParticleShooter greenParticleShooter;
+    private ParticleShooter greenParticleShooter;
     private ParticleShooter blueParticleShooter;
 
     private long globalStartTime;
@@ -139,6 +139,8 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
     public static float yScale = 2f;
     public static float zScale = 300f;
 
+    private boolean isInit = false;
+
 
     //光线向量，由(0,0,-1)开始旋转，直到太阳处于屏幕正中间计算出来下面的向量
     final float[] vectorToLight = {0.30f, 0.35f, -0.89f, 0f};
@@ -172,7 +174,14 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
             Log.d("particle", "Invalid operation");
         }
 
+        if (!isInit) {
+            init();
+            isInit = true;
+        }
 
+    }
+
+    public void init() {
         heightmapProgram = new HeightmapShaderProgram(context);
         heightmap = new Heightmap(((BitmapDrawable) context.getResources().getDrawable(R.drawable.heightmap))
                 .getBitmap());
@@ -201,7 +210,6 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         UFOs = new UFO[6];
         float x1 = heightmap.getPoint(heightmap.pixels, row, col - 2).x;
         float x2 = heightmap.getPoint(heightmap.pixels, row, col + 2).x;
-        float z = heightmap.getPoint(heightmap.pixels, row, col - 2).z;
         addUFOs(0, 2, new Geometry.Point(x1, 0.7f, 0f));
         addUFOs(2, 2, new Geometry.Point(0f, 0.7f, 0f));
         addUFOs(4, 2, new Geometry.Point(x2, 0.7f, 0f));
@@ -212,9 +220,10 @@ public class ParticlesRenderer implements GLSurfaceView.Renderer {
         final float angleVarianceInDegrees = 5f;
         final float speedVariance = 1.0f;
 
-        redParticleShooter = new ParticleShooter(new Geometry.Point(-1f, 0f, z * zScale), particleDirection, Color.rgb(255, 50, 0), angleVarianceInDegrees, speedVariance);
-        //greenParticleShooter = new ParticleShooter(new Geometry.Point(-1f, 0f, 0f), particleDirection, Color.rgb(25, 255, 25), angleVarianceInDegrees, speedVariance);
-        blueParticleShooter = new ParticleShooter(new Geometry.Point(1f, 0f, z * zScale), particleDirection, Color.rgb(5, 50, 255), angleVarianceInDegrees, speedVariance);
+        float z = heightmap.getPoint(heightmap.pixels, row, col - 2).z * zScale;
+        redParticleShooter = new ParticleShooter(new Geometry.Point(-1f, 0f, z), particleDirection, Color.rgb(255, 50, 0), angleVarianceInDegrees, speedVariance);
+        //greenParticleShooter = new ParticleShooter(new Geometry.Point(0f, 0f, z), particleDirection, Color.rgb(25, 255, 25), angleVarianceInDegrees, speedVariance);
+        blueParticleShooter = new ParticleShooter(new Geometry.Point(1f, 0f, z), particleDirection, Color.rgb(5, 50, 255), angleVarianceInDegrees, speedVariance);
 
 
         btn_pic = TextureHelper.loadTexture(context, R.drawable.arrow);
