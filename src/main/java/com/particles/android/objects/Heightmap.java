@@ -70,7 +70,10 @@ public class Heightmap {
 
                 final Geometry.Vector rightToLeft = Geometry.vectorBetween(right, left);
                 final Geometry.Vector topToBottom = Geometry.vectorBetween(top, bottom);
-                final Geometry.Vector normal = rightToLeft.crossProduct(topToBottom).normalize();//投影面积向量
+                
+                //投影面积向量,由于GL的z轴方向和向量叉积z轴相反，所以这边得到的点是右上角的点，即每个（row,col+1）存放右上角的点，与后面索引一一对应
+                final Geometry.Vector normal = rightToLeft.crossProduct(topToBottom).normalize();
+                
 
                 heightmapVerticles[offSet++] = normal.x;
                 heightmapVerticles[offSet++] = normal.y;
