@@ -71,7 +71,8 @@ public class Heightmap {
                 final Geometry.Vector rightToLeft = Geometry.vectorBetween(right, left);
                 final Geometry.Vector topToBottom = Geometry.vectorBetween(top, bottom);
                 
-                //投影面积向量,这边得到的点是当前点右边的点，即当前点（row,col）是矩形左上角点，（row,col+1）存放右上角的点，与后面索引一一对应
+                //投影面积向量,向量叉乘得到的向量是法向量，所以这边是将调整后的向量作为当前点右边的点，
+                //即当前点（row,col）是矩形左上角点，（row,col+1）存放右上角的点，与后面索引一一对应
                 final Geometry.Vector normal = rightToLeft.crossProduct(topToBottom).normalize();
                 
 
